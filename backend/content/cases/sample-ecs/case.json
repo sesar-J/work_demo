@@ -1,0 +1,9 @@
+{
+  "slug": "huawei-ecs-bootstrap",
+  "title": "华为云 ECS 快速启动实践",
+  "summary": "学习如何创建 ECS、配置安全组，并通过云服务器完成基础环境初始化。",
+  "cover_image": "https://picsum.photos/seed/ecs/800/320",
+  "detail_notebook": "detail.ipynb",
+  "operation_notebook": "operation.ipynb",
+  "notebook_iframe_url": "https://jupyter.org/try-jupyter/lab/"
+}

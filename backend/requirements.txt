@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+sqlmodel
+alembic
+python-multipart
+nbformat
+nbconvert

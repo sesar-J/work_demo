@@ -1,0 +1,9 @@
+{
+  "slug": "huawei-vpc-terraform",
+  "title": "华为云 VPC Terraform 部署指南",
+  "summary": "通过 Terraform 在华为云创建 VPC、子网与安全组的实践案例。",
+  "cover_image": "https://picsum.photos/seed/vpc/800/320",
+  "detail_notebook": "detail.ipynb",
+  "operation_notebook": "operation.ipynb",
+  "notebook_iframe_url": "https://jupyter.org/try-jupyter/lab/"
+}

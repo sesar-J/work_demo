@@ -1,0 +1,9 @@
+{
+  "slug": "huawei-rds-mysql-baseline",
+  "title": "华为云 RDS MySQL 基础部署",
+  "summary": "从网络白名单到账号权限，完成 RDS MySQL 的创建与连接验证。",
+  "cover_image": "https://picsum.photos/seed/rds/800/320",
+  "detail_notebook": "detail.ipynb",
+  "operation_notebook": "operation.ipynb",
+  "notebook_iframe_url": "https://jupyter.org/try-jupyter/lab/"
+}

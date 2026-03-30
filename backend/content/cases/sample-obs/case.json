@@ -1,0 +1,9 @@
+{
+  "slug": "huawei-obs-cli-practice",
+  "title": "华为云 OBS CLI 文件管理实践",
+  "summary": "通过命令行完成桶创建、文件上传下载与权限验证。",
+  "cover_image": "https://picsum.photos/seed/obs/800/320",
+  "detail_notebook": "detail.ipynb",
+  "operation_notebook": "operation.ipynb",
+  "notebook_iframe_url": "https://jupyter.org/try-jupyter/lab/"
+}
