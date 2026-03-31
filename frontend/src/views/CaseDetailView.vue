@@ -28,30 +28,60 @@ function startNow() {
 </script>
 
 <template>
-  <div class="page">
-    <TinyButton @click="router.push('/')">返回首页</TinyButton>
-    <p v-if="loading">加载中...</p>
-    <p v-else-if="error">{{ error }}</p>
-    <div v-else-if="item">
-      <h1>{{ item.title }}</h1>
-      <p>{{ item.summary }}</p>
-      <div class="article" v-html="item.detail_html"></div>
-      <TinyButton type="primary" @click="startNow">立即开始</TinyButton>
+  <div class="page-container">
+    <div class="back-wrap">
+      <TinyButton @click="router.push('/')">返回首页</TinyButton>
+    </div>
+    <p v-if="loading" class="state-text">加载中...</p>
+    <p v-else-if="error" class="state-text error">{{ error }}</p>
+    <div v-else-if="item" class="detail-wrap">
+      <section class="intro glass-panel">
+        <h1>{{ item.title }}</h1>
+        <p>{{ item.summary }}</p>
+        <TinyButton type="primary" @click="startNow">立即开始</TinyButton>
+      </section>
+      <section class="article glass-panel" v-html="item.detail_html"></section>
     </div>
   </div>
 </template>
 
 <style scoped>
-.page {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 24px;
+.back-wrap {
+  margin-bottom: 12px;
+}
+
+.detail-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.intro {
+  padding: 20px;
+}
+
+.intro h1 {
+  margin: 0 0 8px;
+}
+
+.intro p {
+  margin: 0 0 14px;
+  color: #4b5563;
+  line-height: 1.6;
 }
 
 .article {
-  margin: 20px 0;
-  padding: 16px;
-  border-radius: 12px;
+  padding: 20px;
+}
+
+.state-text {
   background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.state-text.error {
+  color: #b91c1c;
 }
 </style>
