@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session
 
 from app.api.routes_cases import router as cases_router
+from app.api.routes_lab import router as lab_router
 from app.api.routes_sync import router as sync_router
 from app.db import engine, init_db
 from app.services.content_service import seed_cases_if_empty
@@ -33,3 +34,4 @@ def health():
 
 app.include_router(cases_router)
 app.include_router(sync_router)
+app.include_router(lab_router)

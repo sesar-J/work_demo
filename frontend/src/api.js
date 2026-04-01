@@ -24,3 +24,13 @@ export async function fetchSyncStatus() {
   const { data } = await api.get("/sync/status");
   return data;
 }
+
+export async function createLabSession(payload) {
+  const { data } = await api.post("/lab/session", payload);
+  return data;
+}
+
+export async function fetchTerraformTemplate() {
+  const { data } = await api.get("/lab/terraform-template");
+  return data;
+}

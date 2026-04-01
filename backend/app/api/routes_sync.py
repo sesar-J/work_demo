@@ -87,6 +87,37 @@ def _allowed_branches() -> List[str]:
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
+def _repo_name(payload: Dict[str, Any]) -> str:
+    repo = payload.get("repository")
+    if isinstance(repo, dict):
+        full_name = repo.get("full_name")
+        if isinstance(full_name, str):
+            return full_name
+        name = repo.get("name")
+        if isinstance(name, str):
+            return name
+        path_with_namespace = repo.get("path_with_namespace")
+        if isinstance(path_with_namespace, str):
+            return path_with_namespace
+    project = payload.get("project")
+    if isinstance(project, dict):
+        name = project.get("name")
+        if isinstance(name, str):
+            return name
+        path_with_namespace = project.get("path_with_namespace")
+        if isinstance(path_with_namespace, str):
+            return path_with_namespace
+    return ""
+
+
+def _is_dtse_repo(payload: Dict[str, Any]) -> bool:
+    current = _repo_name(payload).lower()
+    expected = os.getenv("DTSE_REPO", "").strip().lower()
+    if expected:
+        return current == expected or current.endswith("/" + expected)
+    return "dtse" in current
+
+
 @router.post("/git-event", response_model=SyncResponse)
 async def sync_from_git_event(
     request: Request,
@@ -98,6 +129,12 @@ async def sync_from_git_event(
     payload: Dict[str, Any] = await request.json()
     signature = x_hub_signature_256 or x_codearts_signature
     verify_webhook_signature(body, signature, os.getenv("GIT_WEBHOOK_SECRET"), x_gitcode_token)
+
+    if not _is_dtse_repo(payload):
+        with Session(engine) as session:
+            session.add(SyncEventLog(source="codearts-or-gitcode", status="skipped", message="skip non-dtse repo"))
+            session.commit()
+        return SyncResponse(message="跳过非 DTSE 案例仓", git_output="skipped", source="codearts-or-gitcode")
 
     branch = _extract_branch(payload)
     allowed = _allowed_branches()

@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { fetchCaseBySlug } from "../api";
+import { createLabSession, fetchCaseBySlug, fetchTerraformTemplate } from "../api";
 
 const route = useRoute();
 const router = useRouter();
@@ -9,18 +9,63 @@ const loading = ref(false);
 const item = ref(null);
 const error = ref("");
 const notebookLoaded = ref(false);
+const notebookUrl = ref("");
+const sessionInfo = ref("");
+const starting = ref(false);
+const terraform = ref(null);
+const showCredentialPanel = ref(false);
+const form = ref({
+  ak: "",
+  sk: "",
+});
 
 onMounted(async () => {
   loading.value = true;
   error.value = "";
   try {
     item.value = await fetchCaseBySlug(route.params.slug);
+    terraform.value = await fetchTerraformTemplate();
+    await startLab();
   } catch (e) {
     error.value = "加载操作页失败。";
   } finally {
     loading.value = false;
   }
 });
+
+async function startLab() {
+  if ((form.value.ak && !form.value.sk) || (!form.value.ak && form.value.sk)) {
+    sessionInfo.value = "AK 和 SK 需要同时填写。";
+    return;
+  }
+
+  starting.value = true;
+  sessionInfo.value = "";
+  try {
+    const payload = {
+      case_slug: route.params.slug,
+    };
+    if (form.value.ak && form.value.sk) {
+      payload.ak = form.value.ak;
+      payload.sk = form.value.sk;
+    }
+
+    const data = await createLabSession({
+      ...payload,
+    });
+    notebookUrl.value = data.notebook_url;
+    notebookLoaded.value = true;
+    sessionInfo.value = `独立环境已就绪，会话ID: ${data.session_id}`;
+  } catch (e) {
+    sessionInfo.value = "启动环境失败，请检查参数后重试。";
+    notebookLoaded.value = true;
+    if (item.value?.notebook_iframe_url) {
+      notebookUrl.value = item.value.notebook_iframe_url;
+    }
+  } finally {
+    starting.value = false;
+  }
+}
 </script>
 
 <template>
@@ -28,7 +73,7 @@ onMounted(async () => {
     <div class="topbar">
       <div class="topbar-inner">
         <button @click="router.push(`/cases/${route.params.slug}`)">返回详情</button>
-        <span class="hint">左侧阅读步骤，右侧执行验证</span>
+        <span class="hint">左侧阅读步骤，右侧直接实操。环境进入页面后自动启动。</span>
       </div>
     </div>
     <p v-if="loading" class="state-text">加载中...</p>
@@ -36,16 +81,44 @@ onMounted(async () => {
     <div v-else-if="item" class="split-layout">
       <section class="left-doc">
         <h2>{{ item.title }} - 操作文档</h2>
+        <div class="terraform-block" v-if="terraform">
+          <h3>统一 Terraform 环境模板</h3>
+          <p>所有案例统一使用以下模板结构：</p>
+          <ul>
+            <li><code>versions.tf</code></li>
+            <li><code>provider.tf</code></li>
+            <li><code>variables.tf</code></li>
+            <li><code>main.tf</code></li>
+            <li><code>terraform.tfvars</code></li>
+          </ul>
+        </div>
         <div v-html="item.operation_html"></div>
       </section>
       <section class="right-lab">
-        <div v-if="!notebookLoaded" class="notebook-placeholder">
-          <p>Notebook 环境较重，点击后再加载可减少首屏等待。</p>
-          <button @click="notebookLoaded = true">加载 Notebook</button>
+        <div class="lab-toolbar">
+          <div>
+            <p class="toolbar-title">Notebook 实操区</p>
+            <p class="session-info" v-if="sessionInfo">{{ sessionInfo }}</p>
+          </div>
+          <button class="secondary-btn" @click="showCredentialPanel = !showCredentialPanel">
+            {{ showCredentialPanel ? "收起 AK/SK 配置" : "配置 AK/SK" }}
+          </button>
         </div>
+
+        <div v-if="showCredentialPanel" class="credential-panel">
+          <div class="form">
+            <input v-model.trim="form.ak" placeholder="输入 AK（可选）" />
+            <input v-model.trim="form.sk" placeholder="输入 SK（可选）" type="password" />
+          </div>
+          <button class="primary-btn" :disabled="starting" @click="startLab">
+            {{ starting ? "更新中..." : "使用 AK/SK 更新环境" }}
+          </button>
+        </div>
+
+        <div v-if="!notebookLoaded" class="loading-placeholder">环境启动中，请稍候...</div>
         <iframe
           v-if="notebookLoaded"
-          :src="item.notebook_iframe_url"
+          :src="notebookUrl || item.notebook_iframe_url"
           title="Jupyter Notebook"
           loading="lazy"
           allowfullscreen
@@ -114,36 +187,114 @@ onMounted(async () => {
   font-size: 20px;
 }
 
+.terraform-block {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.terraform-block h3 {
+  margin: 0 0 8px;
+}
+
+.terraform-block p {
+  margin: 0 0 8px;
+  color: #475569;
+}
+
+.terraform-block ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
 .right-lab {
   min-height: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   overflow: hidden;
 }
 
-.notebook-placeholder {
-  text-align: center;
-  color: #374151;
+.lab-toolbar {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.notebook-placeholder button {
-  margin-top: 10px;
+.toolbar-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.secondary-btn,
+.primary-btn {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  padding: 8px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.primary-btn {
   border: none;
-  border-radius: 10px;
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #fff;
-  padding: 9px 14px;
   font-weight: 600;
-  cursor: pointer;
+}
+
+.credential-panel {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  background: #f8fafc;
+}
+
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.form input {
+  flex: 1;
+  min-width: 180px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.primary-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.session-info {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #475569;
+}
+
+.loading-placeholder {
+  padding: 14px;
+  color: #64748b;
+  font-size: 13px;
 }
 
 .notebook-frame {
   width: 100%;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   border: none;
 }
 

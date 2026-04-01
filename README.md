@@ -69,6 +69,8 @@ npm run dev
 7. 同步审计日志表 `SyncEventLog`（记录来源、状态、消息、时间）
 8. webhook 分支过滤（默认仅 `main/master`，可通过 `SYNC_BRANCHES` 配置）
 9. 增量重建（根据提交文件路径，仅重建受影响案例）
+10. 操作页按“用户 + 案例”启动独立 Notebook 会话（刷新不保留历史状态）
+11. 所有案例统一 Terraform 模板接口：`GET /api/lab/terraform-template`
 
 ## 内容组织规范（已落地）
 
@@ -99,6 +101,9 @@ backend/content/cases/<case-slug>/
   - `POST /api/sync/git-event`：接收 webhook 并增量同步
   - `POST /api/sync/rebuild`：手动重建所有案例
   - `GET /api/sync/status`：查询最新同步状态
+- Lab 接口：
+  - `POST /api/lab/session`：按用户+案例创建独立会话 URL
+  - `GET /api/lab/terraform-template`：获取统一 Terraform 模板
 - 后续可扩展：
   - 增量同步与版本号
   - `ipynb` 转换异步队列
@@ -108,6 +113,8 @@ backend/content/cases/<case-slug>/
 
 - `GIT_WEBHOOK_SECRET`：webhook 校验密钥（推荐必填）
 - `SYNC_BRANCHES`：允许触发同步的分支列表，逗号分隔，默认 `main,master`
+- `DTSE_REPO`：允许同步的 DTSE 仓库名（例如 `dtse/case-content`）
+- `NOTEBOOK_BASE_URL`：Notebook 基础地址（默认 `https://jupyter.org/try-jupyter/lab/`）
 
 ## Python 版本建议
 
