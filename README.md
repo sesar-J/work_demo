@@ -17,58 +17,86 @@ demo/
   frontend/
 ```
 
-## 启动方式
+## 启动方式（mac + Windows）
 
-### 1) 启动后端
+### A. 使用脚本（推荐）
+
+根目录只保留两个入口：
+- macOS/Linux: `run.sh`
+- Windows: `run.bat`
+
+#### macOS/Linux
 
 ```bash
+# 已有 Python + Node.js
+./run.sh start
+
+# 没有环境时自动安装后再启动
+./run.sh install
+
+# 停止前后端
+./run.sh stop
+```
+
+#### Windows（PowerShell 或 CMD）
+
+```bat
+REM 已有 Python + Node.js
+run.bat start
+
+REM 没有环境时自动安装后再启动
+run.bat install
+
+REM 停止前后端
+run.bat stop
+```
+
+脚本模式说明：
+- `start`：机器已有 Python/Node.js 时直接启动
+- `install`：缺少环境时自动安装后再启动
+- `stop`：停止 `8000/5173` 端口上的前后端进程
+
+### B. 不使用脚本（手动）
+
+#### macOS/Linux 手动启动
+
+```bash
+# 终端 1：后端
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+python -m uvicorn app.main:app --reload --port 8000
 ```
 
-### 2) 启动前端
-
 ```bash
+# 终端 2：前端
 cd frontend
 npm install
-npm run dev
+npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-前端默认访问 `http://127.0.0.1:5173`，并调用后端 `http://127.0.0.1:8000/api`。
-
-### 3) 一键启动（推荐，已精简）
-
-在项目根目录执行以下二选一：
-
-```bash
-# 场景 1：机器已安装 Python + Node.js（默认模式）
-./start.sh
-
-# 场景 2：机器未安装环境，自动安装后再启动
-./start.sh install
-```
-
-Windows 对应命令：
+#### Windows 手动启动
 
 ```bat
-start.bat
-start.bat install
+REM 终端 1：后端
+cd backend
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
 ```
 
-说明：
-- `ready` 模式（默认）：只做环境检查 + 安装项目依赖 + 启动前后端
-- `install` 模式：若缺失 Python/Node.js，先自动安装，再继续启动流程
-- 启动端口：后端 `8000`，前端 `5173`
-- 日志路径：`.run/backend.log`、`.run/frontend.log`
-
-停止服务：
-
-```bash
-./scripts/stop.sh
+```bat
+REM 终端 2：前端
+cd frontend
+npm install
+npm run dev -- --host 127.0.0.1 --port 5173
 ```
+
+访问地址：
+- 前端：`http://127.0.0.1:5173/`
+- 后端：`http://127.0.0.1:8000`
+- 健康检查：`http://127.0.0.1:8000/api/health`
 
 ## 当前已实现能力（MVP）
 
