@@ -51,6 +51,10 @@ REM 停止前后端
 run.bat stop
 ```
 
+说明：
+- 在 PowerShell 中请用 `.\run.bat start|install|stop` 调用。
+- 不要把 `cmd` 语法（如 `cd /d`、`&&`）直接粘贴到 PowerShell 里执行。
+
 Windows 日志文件（排错用）：
 - `.run\backend.log` / `.run\backend.err.log`
 - `.run\frontend.log` / `.run\frontend.err.log`

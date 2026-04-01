@@ -19,8 +19,6 @@ set "BACKEND_LOG=%RUN_DIR%\backend.log"
 set "BACKEND_ERR=%RUN_DIR%\backend.err.log"
 set "FRONTEND_LOG=%RUN_DIR%\frontend.log"
 set "FRONTEND_ERR=%RUN_DIR%\frontend.err.log"
-set "BACKEND_PID_FILE=%RUN_DIR%\backend.pid"
-set "FRONTEND_PID_FILE=%RUN_DIR%\frontend.pid"
 
 if /I "%ACTION%"=="stop" (
     call :stop_all
@@ -65,19 +63,24 @@ if errorlevel 1 (
     exit /b 1
 )
 
-call :stop_all >nul 2>&1
+call :release_port 8000 backend || exit /b 1
+call :release_port 5173 frontend || exit /b 1
 
 echo [INFO] 启动后端...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=Start-Process -FilePath '%BACKEND_DIR%\.venv\Scripts\python.exe' -ArgumentList '-m','uvicorn','app.main:app','--port','8000' -WorkingDirectory '%BACKEND_DIR%' -RedirectStandardOutput '%BACKEND_LOG%' -RedirectStandardError '%BACKEND_ERR%' -PassThru; $p.Id" > "%BACKEND_PID_FILE%"
-if errorlevel 1 (
-    echo [ERR] 后端启动命令执行失败
-    exit /b 1
-)
+start "backend-8000" /min cmd /c "cd /d \"%BACKEND_DIR%\" && .venv\Scripts\python.exe -m uvicorn app.main:app --port 8000 1> \"%BACKEND_LOG%\" 2> \"%BACKEND_ERR%\""
 
 echo [INFO] 启动前端...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=Start-Process -FilePath 'npm.cmd' -ArgumentList 'run','dev','--','--host','127.0.0.1','--port','5173' -WorkingDirectory '%FRONTEND_DIR%' -RedirectStandardOutput '%FRONTEND_LOG%' -RedirectStandardError '%FRONTEND_ERR%' -PassThru; $p.Id" > "%FRONTEND_PID_FILE%"
+start "frontend-5173" /min cmd /c "cd /d \"%FRONTEND_DIR%\" && npm run dev -- --host 127.0.0.1 --port 5173 1> \"%FRONTEND_LOG%\" 2> \"%FRONTEND_ERR%\""
+
+timeout /t 2 /nobreak >nul
+call :check_port 8000
 if errorlevel 1 (
-    echo [ERR] 前端启动命令执行失败
+    echo [ERR] 后端未能成功监听 8000，请查看 %BACKEND_ERR%
+    exit /b 1
+)
+call :check_port 5173
+if errorlevel 1 (
+    echo [ERR] 前端未能成功监听 5173，请查看 %FRONTEND_ERR%
     exit /b 1
 )
 
@@ -155,9 +158,36 @@ if errorlevel 1 (
 exit /b 0
 
 :stop_all
-for /f "tokens=5" %%p in ('netstat -ano ^| findstr /R /C:":8000 .*LISTENING"') do taskkill /F /PID %%p >nul 2>&1
-for /f "tokens=5" %%p in ('netstat -ano ^| findstr /R /C:":5173 .*LISTENING"') do taskkill /F /PID %%p >nul 2>&1
-if exist "%BACKEND_PID_FILE%" del /q "%BACKEND_PID_FILE%" >nul 2>&1
-if exist "%FRONTEND_PID_FILE%" del /q "%FRONTEND_PID_FILE%" >nul 2>&1
+call :release_port 8000 backend >nul 2>&1
+call :release_port 5173 frontend >nul 2>&1
 echo [OK] 已停止前后端
 exit /b 0
+
+:check_port
+for /f "tokens=1,2,3,4,5" %%a in ('netstat -ano -p tcp ^| findstr /I "LISTENING" ^| findstr /R /C:":%1 " ') do (
+    echo [OK] 端口 %1 已监听（PID: %%e）
+    exit /b 0
+)
+exit /b 1
+
+:release_port
+set "TARGET_PORT=%~1"
+set "TARGET_NAME=%~2"
+set "FOUND="
+for /L %%n in (1,1,10) do (
+    set "FOUND="
+    for /f "tokens=1,2,3,4,5" %%a in ('netstat -ano -p tcp ^| findstr /R /C:":!TARGET_PORT! " ') do (
+        echo %%b| findstr /R /C:".*:!TARGET_PORT!$" >nul
+        if not errorlevel 1 (
+            set "FOUND=1"
+            taskkill /F /PID %%e >nul 2>&1
+        )
+    )
+    if not defined FOUND (
+        echo [OK] %TARGET_NAME% 端口 !TARGET_PORT! 已释放
+        exit /b 0
+    )
+    timeout /t 1 /nobreak >nul
+)
+echo [ERR] %TARGET_NAME% 端口 !TARGET_PORT! 仍被占用，请手动检查
+exit /b 1
