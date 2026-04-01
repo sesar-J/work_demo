@@ -39,18 +39,30 @@ npm run dev
 
 前端默认访问 `http://127.0.0.1:5173`，并调用后端 `http://127.0.0.1:8000/api`。
 
-### 3) 一键启动（推荐）
+### 3) 一键启动（推荐，已精简）
 
-在项目根目录执行：
+在项目根目录执行以下二选一：
 
 ```bash
-./scripts/dev.sh
+# 场景 1：机器已安装 Python + Node.js（默认模式）
+./start.sh
+
+# 场景 2：机器未安装环境，自动安装后再启动
+./start.sh install
 ```
 
-脚本会自动：
-- 启动后端（`8000`）
-- 启动前端（`5173`）
-- 输出日志路径（`.run/backend.log`、`.run/frontend.log`）
+Windows 对应命令：
+
+```bat
+start.bat
+start.bat install
+```
+
+说明：
+- `ready` 模式（默认）：只做环境检查 + 安装项目依赖 + 启动前后端
+- `install` 模式：若缺失 Python/Node.js，先自动安装，再继续启动流程
+- 启动端口：后端 `8000`，前端 `5173`
+- 日志路径：`.run/backend.log`、`.run/frontend.log`
 
 停止服务：
 
