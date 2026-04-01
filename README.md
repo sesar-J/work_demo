@@ -58,6 +58,14 @@ run.bat stop
 Windows 日志文件（排错用）：
 - `.run\backend.log` / `.run\backend.err.log`
 - `.run\frontend.log` / `.run\frontend.err.log`
+- `.run\backend.port` / `.run\frontend.port`（本次实际启动端口）
+
+Windows 端口说明：
+- 默认后端 `8000`、前端 `5173`。
+- 若默认端口被占用，`run.bat start` 会自动向后扫描可用端口并继续启动。
+- 前端会自动读取本次后端端口（通过 `VITE_API_BASE_URL` 注入），无需手动改代码。
+- 如需指定起始端口，可在命令前设置：
+  - `set BACKEND_PORT=8001 && set FRONTEND_PORT=5174 && run.bat start`
 
 Windows 换行说明：
 - 仓库已通过 `.gitattributes` 强制 `*.bat` 使用 `CRLF`（避免批处理异常）。

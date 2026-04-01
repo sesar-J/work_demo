@@ -19,6 +19,10 @@ set "BACKEND_LOG=%RUN_DIR%\backend.log"
 set "BACKEND_ERR=%RUN_DIR%\backend.err.log"
 set "FRONTEND_LOG=%RUN_DIR%\frontend.log"
 set "FRONTEND_ERR=%RUN_DIR%\frontend.err.log"
+set "BACKEND_PORT_FILE=%RUN_DIR%\backend.port"
+set "FRONTEND_PORT_FILE=%RUN_DIR%\frontend.port"
+if "%BACKEND_PORT%"=="" set "BACKEND_PORT=8000"
+if "%FRONTEND_PORT%"=="" set "FRONTEND_PORT=5173"
 
 if /I "%ACTION%"=="stop" (
     call :stop_all
@@ -63,31 +67,50 @@ if errorlevel 1 (
     exit /b 1
 )
 
-call :release_port 8000 backend || exit /b 1
-call :release_port 5173 frontend || exit /b 1
+call :release_port %BACKEND_PORT% backend >nul 2>&1
+if errorlevel 1 (
+    call :find_available_port %BACKEND_PORT% BACKEND_PORT
+    if errorlevel 1 (
+        echo [ERR] 未找到可用后端端口（从 %BACKEND_PORT% 开始扫描）
+        exit /b 1
+    )
+    echo [WARN] 后端默认端口被占用，改用端口 %BACKEND_PORT%
+)
+call :release_port %FRONTEND_PORT% frontend >nul 2>&1
+if errorlevel 1 (
+    call :find_available_port %FRONTEND_PORT% FRONTEND_PORT
+    if errorlevel 1 (
+        echo [ERR] 未找到可用前端端口（从 %FRONTEND_PORT% 开始扫描）
+        exit /b 1
+    )
+    echo [WARN] 前端默认端口被占用，改用端口 %FRONTEND_PORT%
+)
+
+> "%BACKEND_PORT_FILE%" echo %BACKEND_PORT%
+> "%FRONTEND_PORT_FILE%" echo %FRONTEND_PORT%
 
 echo [INFO] 启动后端...
-start "backend-8000" /min cmd /c "cd /d \"%BACKEND_DIR%\" && .venv\Scripts\python.exe -m uvicorn app.main:app --port 8000 1> \"%BACKEND_LOG%\" 2> \"%BACKEND_ERR%\""
+start "backend-%BACKEND_PORT%" /min cmd /c "cd /d \"%BACKEND_DIR%\" && .venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port %BACKEND_PORT% 1> \"%BACKEND_LOG%\" 2> \"%BACKEND_ERR%\""
 
 echo [INFO] 启动前端...
-start "frontend-5173" /min cmd /c "cd /d \"%FRONTEND_DIR%\" && npm run dev -- --host 127.0.0.1 --port 5173 1> \"%FRONTEND_LOG%\" 2> \"%FRONTEND_ERR%\""
+start "frontend-%FRONTEND_PORT%" /min cmd /c "cd /d \"%FRONTEND_DIR%\" && set VITE_API_BASE_URL=http://127.0.0.1:%BACKEND_PORT%/api && npx vite --host 127.0.0.1 --port %FRONTEND_PORT% 1> \"%FRONTEND_LOG%\" 2> \"%FRONTEND_ERR%\""
 
 timeout /t 2 /nobreak >nul
-call :check_port 8000
+call :check_port %FRONTEND_PORT%
 if errorlevel 1 (
-    echo [ERR] 后端未能成功监听 8000，请查看 %BACKEND_ERR%
+    echo [ERR] 前端未能成功监听 %FRONTEND_PORT%，请查看 %FRONTEND_ERR%
     exit /b 1
 )
-call :check_port 5173
+call :check_port %BACKEND_PORT%
 if errorlevel 1 (
-    echo [ERR] 前端未能成功监听 5173，请查看 %FRONTEND_ERR%
+    echo [ERR] 后端未能成功监听 %BACKEND_PORT%，请查看 %BACKEND_ERR%
     exit /b 1
 )
 
 echo.
 echo [OK] 启动完成
-echo 前端: http://127.0.0.1:5173/
-echo 后端: http://127.0.0.1:8000
+echo 前端: http://127.0.0.1:%FRONTEND_PORT%/
+echo 后端: http://127.0.0.1:%BACKEND_PORT%
 echo 日志: %BACKEND_LOG%  ^|  %FRONTEND_LOG%
 echo 错误日志: %BACKEND_ERR%  ^|  %FRONTEND_ERR%
 echo 停止: run.bat stop
@@ -158,8 +181,16 @@ if errorlevel 1 (
 exit /b 0
 
 :stop_all
-call :release_port 8000 backend >nul 2>&1
-call :release_port 5173 frontend >nul 2>&1
+if exist "%BACKEND_PORT_FILE%" (
+    for /f "usebackq delims=" %%p in ("%BACKEND_PORT_FILE%") do set "BACKEND_PORT=%%p"
+)
+if exist "%FRONTEND_PORT_FILE%" (
+    for /f "usebackq delims=" %%p in ("%FRONTEND_PORT_FILE%") do set "FRONTEND_PORT=%%p"
+)
+call :release_port %BACKEND_PORT% backend >nul 2>&1
+call :release_port %FRONTEND_PORT% frontend >nul 2>&1
+if exist "%BACKEND_PORT_FILE%" del /q "%BACKEND_PORT_FILE%" >nul 2>&1
+if exist "%FRONTEND_PORT_FILE%" del /q "%FRONTEND_PORT_FILE%" >nul 2>&1
 echo [OK] 已停止前后端
 exit /b 0
 
@@ -190,4 +221,17 @@ for /L %%n in (1,1,10) do (
     timeout /t 1 /nobreak >nul
 )
 echo [ERR] %TARGET_NAME% 端口 !TARGET_PORT! 仍被占用，请手动检查
+exit /b 1
+
+:find_available_port
+setlocal enabledelayedexpansion
+set /a "PORT_BASE=%~1"
+for /L %%n in (0,1,200) do (
+    set /a "CANDIDATE=PORT_BASE+%%n"
+    call :check_port !CANDIDATE! >nul 2>&1
+    if errorlevel 1 (
+        endlocal & set "%~2=!CANDIDATE!" & exit /b 0
+    )
+)
+endlocal
 exit /b 1
