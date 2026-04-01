@@ -51,6 +51,15 @@ REM 停止前后端
 run.bat stop
 ```
 
+Windows 日志文件（排错用）：
+- `.run\backend.log` / `.run\backend.err.log`
+- `.run\frontend.log` / `.run\frontend.err.log`
+
+Windows 换行说明：
+- 仓库已通过 `.gitattributes` 强制 `*.bat` 使用 `CRLF`（避免批处理异常）。
+- 如果你是旧仓库直接 `pull` 后仍是 `LF`，可重新检出该文件：
+  - `git checkout -- run.bat`
+
 脚本模式说明：
 - `start`：机器已有 Python/Node.js 时直接启动
 - `install`：缺少环境时自动安装后再启动

@@ -16,7 +16,9 @@ set "BACKEND_DIR=%ROOT_DIR%backend"
 set "FRONTEND_DIR=%ROOT_DIR%frontend"
 set "RUN_DIR=%ROOT_DIR%.run"
 set "BACKEND_LOG=%RUN_DIR%\backend.log"
+set "BACKEND_ERR=%RUN_DIR%\backend.err.log"
 set "FRONTEND_LOG=%RUN_DIR%\frontend.log"
+set "FRONTEND_ERR=%RUN_DIR%\frontend.err.log"
 set "BACKEND_PID_FILE=%RUN_DIR%\backend.pid"
 set "FRONTEND_PID_FILE=%RUN_DIR%\frontend.pid"
 
@@ -66,16 +68,25 @@ if errorlevel 1 (
 call :stop_all >nul 2>&1
 
 echo [INFO] 启动后端...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=Start-Process -FilePath '%BACKEND_DIR%\.venv\Scripts\python.exe' -ArgumentList '-m','uvicorn','app.main:app','--reload','--port','8000' -WorkingDirectory '%BACKEND_DIR%' -RedirectStandardOutput '%BACKEND_LOG%' -RedirectStandardError '%BACKEND_LOG%' -PassThru; $p.Id" > "%BACKEND_PID_FILE%"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=Start-Process -FilePath '%BACKEND_DIR%\.venv\Scripts\python.exe' -ArgumentList '-m','uvicorn','app.main:app','--port','8000' -WorkingDirectory '%BACKEND_DIR%' -RedirectStandardOutput '%BACKEND_LOG%' -RedirectStandardError '%BACKEND_ERR%' -PassThru; $p.Id" > "%BACKEND_PID_FILE%"
+if errorlevel 1 (
+    echo [ERR] 后端启动命令执行失败
+    exit /b 1
+)
 
 echo [INFO] 启动前端...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=Start-Process -FilePath 'npm.cmd' -ArgumentList 'run','dev','--','--host','127.0.0.1','--port','5173' -WorkingDirectory '%FRONTEND_DIR%' -RedirectStandardOutput '%FRONTEND_LOG%' -RedirectStandardError '%FRONTEND_LOG%' -PassThru; $p.Id" > "%FRONTEND_PID_FILE%"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=Start-Process -FilePath 'npm.cmd' -ArgumentList 'run','dev','--','--host','127.0.0.1','--port','5173' -WorkingDirectory '%FRONTEND_DIR%' -RedirectStandardOutput '%FRONTEND_LOG%' -RedirectStandardError '%FRONTEND_ERR%' -PassThru; $p.Id" > "%FRONTEND_PID_FILE%"
+if errorlevel 1 (
+    echo [ERR] 前端启动命令执行失败
+    exit /b 1
+)
 
 echo.
 echo [OK] 启动完成
 echo 前端: http://127.0.0.1:5173/
 echo 后端: http://127.0.0.1:8000
 echo 日志: %BACKEND_LOG%  ^|  %FRONTEND_LOG%
+echo 错误日志: %BACKEND_ERR%  ^|  %FRONTEND_ERR%
 echo 停止: run.bat stop
 exit /b 0
 

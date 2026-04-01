@@ -41,7 +41,17 @@ jobs:
             } catch {}
             Start-Sleep -Seconds 2
           }
-          if (-not $ok) { throw "Backend health check failed" }
+          if (-not $ok) {
+            Write-Host "=== netstat ==="
+            cmd /c "netstat -ano | findstr :8000"
+            Write-Host "=== .run files ==="
+            Get-ChildItem -Path ".run" -ErrorAction SilentlyContinue | Format-Table -AutoSize
+            Write-Host "=== backend.log ==="
+            if (Test-Path ".run\backend.log") { Get-Content ".run\backend.log" -Tail 200 }
+            Write-Host "=== backend.err.log ==="
+            if (Test-Path ".run\backend.err.log") { Get-Content ".run\backend.err.log" -Tail 200 }
+            throw "Backend health check failed"
+          }
 
       - name: Wait for frontend
         shell: powershell
@@ -54,7 +64,15 @@ jobs:
             } catch {}
             Start-Sleep -Seconds 2
           }
-          if (-not $ok) { throw "Frontend check failed" }
+          if (-not $ok) {
+            Write-Host "=== netstat ==="
+            cmd /c "netstat -ano | findstr :5173"
+            Write-Host "=== frontend.log ==="
+            if (Test-Path ".run\frontend.log") { Get-Content ".run\frontend.log" -Tail 200 }
+            Write-Host "=== frontend.err.log ==="
+            if (Test-Path ".run\frontend.err.log") { Get-Content ".run\frontend.err.log" -Tail 200 }
+            throw "Frontend check failed"
+          }
 
       - name: Stop services
         if: always()
