@@ -1,5 +1,4 @@
 @echo off
-chcp 65001 >nul
 setlocal enabledelayedexpansion
 
 echo.
@@ -15,158 +14,95 @@ set "FRONTEND_DIR=%ROOT_DIR%\frontend"
 
 cd /d "%ROOT_DIR%"
 
-REM 刷新环境变量函数
-:refresh_env
-echo [*] 刷新环境变量...
-
-REM 从注册表重新读取用户 PATH
-for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v Path 2^>nul') do set "USER_PATH=%%b"
-
-REM 从注册表重新读取系统 PATH
-for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path 2^>nul') do set "SYSTEM_PATH=%%b"
-
-REM 合并 PATH
-set "PATH=%USER_PATH%;%SYSTEM_PATH%"
-
-echo [✓] 环境变量已刷新
-goto :eof
-
 REM 检查 Python
-:check_python
-python --version >nul 2>&1
-if %errorlevel% equ 0 (
-    for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
-    echo [✓] 找到 Python: !PYTHON_VERSION!
-    set "PYTHON_FOUND=1"
-) else (
-    set "PYTHON_FOUND=0"
+echo [1/6] 检查 Python 环境...
+where python >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [!] 未找到 Python，开始自动安装...
+    
+    REM 检查 winget
+    where winget >nul 2>&1
+    if %errorlevel% equ 0 (
+        echo [*] 使用 winget 安装 Python 3.11...
+        winget install Python.Python.3.11 --accept-source-agreements --accept-package-agreements
+        
+        echo.
+        echo [!] Python 已安装，但需要刷新环境变量
+        echo [*] 请关闭当前窗口，重新打开 PowerShell 后再次运行此脚本
+        echo.
+        pause
+        exit /b 0
+    )
+    
+    REM 检查 chocolatey
+    where choco >nul 2>&1
+    if %errorlevel% equ 0 (
+        echo [*] 使用 Chocolatey 安装 Python...
+        choco install python -y
+        
+        echo.
+        echo [!] Python 已安装，但需要刷新环境变量
+        echo [*] 请关闭当前窗口，重新打开 PowerShell 后再次运行此脚本
+        echo.
+        pause
+        exit /b 0
+    )
+    
+    echo [✗] 未找到包管理器，请手动安装 Python:
+    echo     https://www.python.org/downloads/
+    echo     安装时请勾选 "Add Python to PATH"
+    echo.
+    pause
+    exit /b 1
 )
-goto :eof
+
+for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
+echo [✓] 找到 Python: %PYTHON_VERSION%
 
 REM 检查 Node.js
-:check_node
-node --version >nul 2>&1
-if %errorlevel% equ 0 (
-    for /f %%i in ('node --version') do set NODE_VERSION=%%i
-    echo [✓] 找到 Node.js: !NODE_VERSION!
-    set "NODE_FOUND=1"
-) else (
-    set "NODE_FOUND=0"
-)
-goto :eof
-
-REM 安装 Python
-:install_python
-echo [!] 未找到 Python，开始自动安装...
-
-REM 检查 winget
-winget --version >nul 2>&1
-if %errorlevel% equ 0 (
-    echo [*] 使用 winget 安装 Python 3.11...
-    winget install Python.Python.3.11 --accept-source-agreements --accept-package-agreements --silent
-    
-    REM 等待安装完成
-    timeout /t 5 /nobreak >nul
-    
-    REM 刷新环境变量
-    call :refresh_env
-    
-    REM 再次检查
-    call :check_python
-    if "!PYTHON_FOUND!"=="1" (
-        echo [✓] Python 安装成功
-        goto :eof
-    )
-)
-
-REM 检查 chocolatey
-choco --version >nul 2>&1
-if %errorlevel% equ 0 (
-    echo [*] 使用 Chocolatey 安装 Python...
-    choco install python -y
-    
-    REM 刷新环境变量
-    call :refresh_env
-    
-    REM 再次检查
-    call :check_python
-    if "!PYTHON_FOUND!"=="1" (
-        echo [✓] Python 安装成功
-        goto :eof
-    )
-)
-
-echo [✗] 自动安装失败，请手动安装 Python:
-echo     https://www.python.org/downloads/
-echo     安装时请勾选 "Add Python to PATH"
-echo     安装完成后，重新运行此脚本
-echo.
-pause
-exit /b 1
-
-REM 安装 Node.js
-:install_node
-echo [!] 未找到 Node.js，开始自动安装...
-
-REM 检查 winget
-winget --version >nul 2>&1
-if %errorlevel% equ 0 (
-    echo [*] 使用 winget 安装 Node.js LTS...
-    winget install OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements --silent
-    
-    REM 等待安装完成
-    timeout /t 5 /nobreak >nul
-    
-    REM 刷新环境变量
-    call :refresh_env
-    
-    REM 再次检查
-    call :check_node
-    if "!NODE_FOUND!"=="1" (
-        echo [✓] Node.js 安装成功
-        goto :eof
-    )
-)
-
-REM 检查 chocolatey
-choco --version >nul 2>&1
-if %errorlevel% equ 0 (
-    echo [*] 使用 Chocolatey 安装 Node.js...
-    choco install nodejs -y
-    
-    REM 刷新环境变量
-    call :refresh_env
-    
-    REM 再次检查
-    call :check_node
-    if "!NODE_FOUND!"=="1" (
-        echo [✓] Node.js 安装成功
-        goto :eof
-    )
-)
-
-echo [✗] 自动安装失败，请手动安装 Node.js:
-echo     https://nodejs.org/
-echo     安装完成后，重新运行此脚本
-echo.
-pause
-exit /b 1
-
-REM 主流程
-echo [1/6] 检查 Python 环境...
-call :check_python
-if "%PYTHON_FOUND%"=="0" (
-    call :install_python
-    if %errorlevel% neq 0 exit /b 1
-)
-
 echo.
 echo [2/6] 检查 Node.js 环境...
-call :check_node
-if "%NODE_FOUND%"=="0" (
-    call :install_node
-    if %errorlevel% neq 0 exit /b 1
+where node >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [!] 未找到 Node.js，开始自动安装...
+    
+    REM 检查 winget
+    where winget >nul 2>&1
+    if %errorlevel% equ 0 (
+        echo [*] 使用 winget 安装 Node.js LTS...
+        winget install OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements
+        
+        echo.
+        echo [!] Node.js 已安装，但需要刷新环境变量
+        echo [*] 请关闭当前窗口，重新打开 PowerShell 后再次运行此脚本
+        echo.
+        pause
+        exit /b 0
+    )
+    
+    REM 检查 chocolatey
+    where choco >nul 2>&1
+    if %errorlevel% equ 0 (
+        echo [*] 使用 Chocolatey 安装 Node.js...
+        choco install nodejs -y
+        
+        echo.
+        echo [!] Node.js 已安装，但需要刷新环境变量
+        echo [*] 请关闭当前窗口，重新打开 PowerShell 后再次运行此脚本
+        echo.
+        pause
+        exit /b 0
+    )
+    
+    echo [✗] 未找到包管理器，请手动安装 Node.js:
+    echo     https://nodejs.org/
+    echo.
+    pause
+    exit /b 1
 )
+
+for /f %%i in ('node --version') do set NODE_VERSION=%%i
+echo [✓] 找到 Node.js: %NODE_VERSION%
 
 REM 创建运行目录
 if not exist "%RUN_DIR%" mkdir "%RUN_DIR%"
