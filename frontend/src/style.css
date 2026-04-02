@@ -34,3 +34,198 @@ a {
   box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(4px);
 }
+
+.markdown-content {
+  color: #1e293b;
+  line-height: 1.8;
+  font-size: 15px;
+  word-break: break-word;
+}
+
+.markdown-content > :first-child {
+  margin-top: 0;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+  margin: 1.5em 0 0.7em;
+  color: #0f172a;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.markdown-content h1 {
+  font-size: 30px;
+}
+
+.markdown-content h2 {
+  font-size: 24px;
+}
+
+.markdown-content h3 {
+  font-size: 20px;
+}
+
+.markdown-content h4 {
+  font-size: 18px;
+}
+
+.markdown-content p {
+  margin: 0.85em 0;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin: 0.8em 0;
+  padding-left: 1.4em;
+}
+
+.markdown-content li {
+  margin: 0.35em 0;
+}
+
+.markdown-content a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown-content code {
+  padding: 0.12em 0.4em;
+  border-radius: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+  font-size: 0.92em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+}
+
+.markdown-content pre {
+  margin: 1em 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #dbeafe;
+  background: #0b1220;
+  color: #e2e8f0;
+  overflow-x: auto;
+}
+
+.markdown-content pre code {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 0.9em;
+}
+
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.1em 0;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid #e2e8f0;
+  padding: 9px 10px;
+  text-align: left;
+}
+
+.markdown-content th {
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+.markdown-content blockquote {
+  margin: 1em 0;
+  padding: 10px 14px;
+  border-left: 4px solid #93c5fd;
+  border-radius: 0 8px 8px 0;
+  background: #eff6ff;
+  color: #334155;
+}
+
+.markdown-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 14px 0;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+/* 压平 nbconvert 默认容器样式，避免和站点样式冲突 */
+.markdown-content .jp-Notebook,
+.markdown-content .jp-Cell,
+.markdown-content .jp-RenderedHTMLCommon,
+.markdown-content .jp-RenderedHTMLCommon pre {
+  font-family: inherit;
+}
+
+.markdown-content .jp-Cell,
+.markdown-content .jp-InputArea,
+.markdown-content .jp-OutputArea {
+  margin: 0;
+  border: none;
+  background: transparent;
+}
+
+/* nbconvert 代码单元专项优化（操作页左侧） */
+.doc-content .anchor-link,
+.doc-content .jp-InputPrompt,
+.doc-content .jp-Collapser {
+  display: none !important;
+}
+
+.doc-content .jp-Cell {
+  margin: 0 0 12px;
+}
+
+.doc-content .jp-MarkdownCell {
+  padding: 0;
+}
+
+.doc-content .jp-CodeCell {
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #0f172a;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+}
+
+.doc-content .jp-CodeCell .jp-InputArea {
+  background: transparent;
+}
+
+.doc-content .jp-CodeCell .jp-InputArea-editor,
+.doc-content .jp-CodeCell .jp-CodeMirrorEditor,
+.doc-content .jp-CodeCell .cm-editor,
+.doc-content .jp-CodeCell .highlight,
+.doc-content .jp-CodeCell pre {
+  background: transparent !important;
+}
+
+.doc-content .jp-CodeCell pre {
+  margin: 0;
+  padding: 14px 16px;
+  border: none;
+  border-radius: 0;
+  overflow-x: auto;
+  color: #e2e8f0;
+  font-size: 13px;
+  line-height: 1.7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+}
+
+.doc-content .jp-CodeCell pre span {
+  color: inherit !important;
+}

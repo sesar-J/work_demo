@@ -40,7 +40,7 @@ function startNow() {
         <p>{{ item.summary }}</p>
         <TinyButton type="primary" @click="startNow">立即开始</TinyButton>
       </section>
-      <section class="article glass-panel" v-html="item.detail_html"></section>
+      <section class="article glass-panel markdown-content" v-html="item.detail_html"></section>
     </div>
   </div>
 </template>

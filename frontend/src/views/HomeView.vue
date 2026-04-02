@@ -10,6 +10,29 @@ const syncLoading = ref(false);
 const syncMessage = ref("暂无同步记录");
 const syncStatus = ref("idle");
 
+function formatSyncMessage(message, status) {
+  if (!message) return "暂无同步记录";
+  if (message.includes("manual rebuild; cases=")) {
+    const count = message.split("cases=")[1] || "0";
+    return `已完成案例内容重建，共 ${count} 个案例。`;
+  }
+  if (message.includes("rebuilt_cases=")) {
+    const count = message.split("rebuilt_cases=")[1] || "0";
+    return `已完成案例内容同步，本次更新 ${count} 个案例。`;
+  }
+  if (message.includes("skip non-dtse repo")) {
+    return "已忽略非 DTSE 案例仓的推送事件。";
+  }
+  if (message.startsWith("skip branch:")) {
+    const branch = message.replace("skip branch:", "").trim();
+    return `已忽略分支 ${branch} 的推送事件。`;
+  }
+  if (status === "error" && message === "同步状态获取失败") {
+    return "同步状态获取失败，请稍后重试。";
+  }
+  return message;
+}
+
 async function loadCases() {
   loading.value = true;
   error.value = "";
@@ -26,10 +49,10 @@ async function loadSyncStatus() {
   try {
     const data = await fetchSyncStatus();
     syncStatus.value = data.status;
-    syncMessage.value = data.message;
+    syncMessage.value = formatSyncMessage(data.message, data.status);
   } catch (e) {
     syncStatus.value = "error";
-    syncMessage.value = "同步状态获取失败";
+    syncMessage.value = "同步状态获取失败，请稍后重试。";
   }
 }
 
@@ -38,11 +61,11 @@ async function manualSync() {
   try {
     const data = await triggerManualRebuild();
     syncStatus.value = "success";
-    syncMessage.value = data.message;
+    syncMessage.value = formatSyncMessage(data.message, "success");
     await loadCases();
   } catch (e) {
     syncStatus.value = "error";
-    syncMessage.value = "手动同步失败";
+    syncMessage.value = "手动同步失败，请稍后重试。";
   } finally {
     syncLoading.value = false;
   }

@@ -1,0 +1,9 @@
+{
+  "slug": "huawei-cce-nginx-deploy",
+  "title": "华为云 CCE 部署 Nginx 实践",
+  "summary": "基于华为云 CCE 完成容器集群准备、Deployment 发布与 Service 暴露。",
+  "cover_image": "https://picsum.photos/seed/cce/800/320",
+  "detail_notebook": "detail.ipynb",
+  "operation_notebook": "operation.ipynb",
+  "notebook_iframe_url": "https://jupyter.org/try-jupyter/lab/"
+}

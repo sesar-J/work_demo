@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Header, Request
@@ -118,6 +119,31 @@ def _is_dtse_repo(payload: Dict[str, Any]) -> bool:
     return "dtse" in current
 
 
+def _friendly_sync_message(source: str, status: str, raw_message: str) -> str:
+    if status == "skipped":
+        if "non-dtse repo" in raw_message:
+            return "已忽略非 DTSE 案例仓的推送事件。"
+        if raw_message.startswith("skip branch:"):
+            branch = raw_message.split(":", 1)[-1].strip()
+            return f"已忽略分支 {branch} 的推送事件。"
+        return "本次同步事件已按规则忽略。"
+
+    if status != "success":
+        return "同步状态异常，请稍后重试。"
+
+    manual_match = re.search(r"cases=(\d+)", raw_message)
+    if manual_match:
+        return f"已完成案例内容重建，共 {manual_match.group(1)} 个案例。"
+
+    webhook_match = re.search(r"rebuilt_cases=(\d+)", raw_message)
+    if webhook_match:
+        return f"已完成案例内容同步，本次更新 {webhook_match.group(1)} 个案例。"
+
+    if source == "manual":
+        return "已完成手动重建。"
+    return "已完成案例内容同步。"
+
+
 @router.post("/git-event", response_model=SyncResponse)
 async def sync_from_git_event(
     request: Request,
@@ -168,7 +194,7 @@ def rebuild_now():
         session.add(SyncEventLog(source="manual", status="success", message=f"manual rebuild; cases={changed_count}"))
         session.commit()
     return SyncResponse(
-        message=f"重建成功（{changed_count} 个案例）",
+        message=f"已完成案例内容重建，共 {changed_count} 个案例。",
         git_output="manual rebuild",
         source="manual",
     )
@@ -180,9 +206,14 @@ def sync_status():
         latest = session.exec(select(SyncEventLog).order_by(SyncEventLog.id.desc())).first()
         if not latest:
             return SyncStatusResponse(source="none", status="idle", message="暂无同步记录", created_at="")
+        friendly_message = _friendly_sync_message(
+            source=latest.source,
+            status=latest.status,
+            raw_message=latest.message,
+        )
         return SyncStatusResponse(
             source=latest.source,
             status=latest.status,
-            message=latest.message,
+            message=friendly_message,
             created_at=latest.created_at.isoformat(),
         )

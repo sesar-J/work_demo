@@ -80,7 +80,11 @@ async function startLab() {
     <p v-else-if="error" class="state-text error">{{ error }}</p>
     <div v-else-if="item" class="split-layout">
       <section class="left-doc">
-        <h2>{{ item.title }} - 操作文档</h2>
+        <div class="doc-header">
+          <p class="doc-eyebrow">LAB GUIDE</p>
+          <h2>{{ item.title }} - 操作文档</h2>
+          <p class="doc-subtitle">建议先阅读完整步骤，再在右侧 Notebook 分段执行，避免中途配置遗漏。</p>
+        </div>
         <div class="terraform-block" v-if="terraform">
           <h3>统一 Terraform 环境模板</h3>
           <p>所有案例统一使用以下模板结构：</p>
@@ -92,7 +96,7 @@ async function startLab() {
             <li><code>terraform.tfvars</code></li>
           </ul>
         </div>
-        <div v-html="item.operation_html"></div>
+        <div class="markdown-content doc-content" v-html="item.operation_html"></div>
       </section>
       <section class="right-lab">
         <div class="lab-toolbar">
@@ -179,20 +183,50 @@ async function startLab() {
   overflow: auto;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  background: #ffffff;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 
 .left-doc h2 {
-  margin-top: 0;
-  font-size: 20px;
+  margin: 6px 0 10px;
+  font-size: 22px;
+  line-height: 1.4;
+}
+
+.doc-header {
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eff6ff, #f8fbff);
+}
+
+.doc-eyebrow {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.doc-subtitle {
+  margin: 0;
+  color: #475569;
+  font-size: 13px;
+}
+
+.doc-content {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
 }
 
 .terraform-block {
   background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #dbeafe;
   border-radius: 10px;
   padding: 12px 14px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .terraform-block h3 {

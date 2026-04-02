@@ -1,0 +1,9 @@
+{
+  "slug": "huawei-functiongraph-obs-image",
+  "title": "华为云 FunctionGraph + OBS 图片处理",
+  "summary": "基于 OBS 触发器自动调用 FunctionGraph，实现图片压缩/处理的事件驱动实践。",
+  "cover_image": "https://picsum.photos/seed/functiongraph/800/320",
+  "detail_notebook": "detail.ipynb",
+  "operation_notebook": "operation.ipynb",
+  "notebook_iframe_url": "https://jupyter.org/try-jupyter/lab/"
+}
