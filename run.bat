@@ -86,8 +86,8 @@ if errorlevel 1 (
     echo [WARN] 前端默认端口被占用，改用端口 %FRONTEND_PORT%
 )
 
-> "%BACKEND_PORT_FILE%" echo %BACKEND_PORT%
-> "%FRONTEND_PORT_FILE%" echo %FRONTEND_PORT%
+echo %BACKEND_PORT% > "%BACKEND_PORT_FILE%"
+echo %FRONTEND_PORT% > "%FRONTEND_PORT_FILE%"
 
 echo [INFO] 启动后端...
 start "backend-%BACKEND_PORT%" /min cmd /c "cd /d \"%BACKEND_DIR%\" && .venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port %BACKEND_PORT% 1> \"%BACKEND_LOG%\" 2> \"%BACKEND_ERR%\""
@@ -95,12 +95,16 @@ start "backend-%BACKEND_PORT%" /min cmd /c "cd /d \"%BACKEND_DIR%\" && .venv\Scr
 echo [INFO] 启动前端...
 start "frontend-%FRONTEND_PORT%" /min cmd /c "cd /d \"%FRONTEND_DIR%\" && set VITE_API_BASE_URL=http://127.0.0.1:%BACKEND_PORT%/api && npx vite --host 127.0.0.1 --port %FRONTEND_PORT% 1> \"%FRONTEND_LOG%\" 2> \"%FRONTEND_ERR%\""
 
-timeout /t 2 /nobreak >nul
-call :check_port %FRONTEND_PORT%
-if errorlevel 1 (
-    echo [ERR] 前端未能成功监听 %FRONTEND_PORT%，请查看 %FRONTEND_ERR%
-    exit /b 1
+REM Vite 冷启动较慢，多轮检测避免误判失败
+for /L %%i in (1,1,15) do (
+    timeout /t 2 /nobreak >nul
+    call :check_port %FRONTEND_PORT% >nul 2>&1
+    if not errorlevel 1 goto :ports_ok
 )
+echo [ERR] 前端未能成功监听 %FRONTEND_PORT%，请查看 %FRONTEND_ERR%
+exit /b 1
+
+:ports_ok
 call :check_port %BACKEND_PORT%
 if errorlevel 1 (
     echo [ERR] 后端未能成功监听 %BACKEND_PORT%，请查看 %BACKEND_ERR%
